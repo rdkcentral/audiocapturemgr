@@ -302,7 +302,8 @@ sequenceDiagram
     participant ACM as audiocapturemgr
     participant IARM as IARM Bus
 
-    Client->>ACM: IARM_Bus_Call(requestSample, {duration, is_precapture})
+    Client->>IARM: IARM_Bus_Call(requestSample, {duration, is_precapture})
+    IARM->>ACM: Dispatch to registered handler
     ACM->>ACM: generate clip (immediate or deferred)
     ACM->>IARM: IARM_Bus_BroadcastEvent(DATA_CAPTURE_IARM_EVENT_AUDIO_CLIP_READY)
     IARM-->>Client: event payload {dataLocator}
