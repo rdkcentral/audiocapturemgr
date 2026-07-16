@@ -99,7 +99,7 @@ IPO --> UDSClients
 Sock --> UDSClients
 ```
 
-### Threading Model
+#### Threading Model
 
 - **Threading Architecture**: Multi-threaded, event-driven around RMF capture callbacks and semaphore/worker loops.
 - **Main Thread**: Process startup, IARM `activate`/`deactivate`, and blocked wait via `pause()`.
@@ -112,10 +112,12 @@ Sock --> UDSClients
 - **Synchronization**: `pthread_mutex_t` (session manager, queue, client list), `std::mutex` (data monitor), `sem_t` (queue wakeup), and a global audio-buffer mutex for refcount operations.
 - **Async / Event Dispatch**: RMF capture callback pushes data into the incoming queue and posts the semaphore. IARM `BroadcastEvent` delivers `AUDIO_CLIP_READY` to subscribed clients. Socket callbacks trigger clip delivery for socket-output mode.
 
-### RDK-V Platform and Integration Requirements
+### Prerequisites and Dependencies
+
+#### Platform and Integration Requirements
 
 - **Build Dependencies**: Build-time recipe dependencies: `virtual/vendor-media-utils` (RMF AudioCapture provider), `media-utils-headers` (supplies `rmfAudioCapture.h`), `iarmbus`, `iarmmgrs`, `libunpriv`, `safec-common-wrapper`, and `safec` (conditional on `safec` in `DISTRO_FEATURES`); runtime dependency on `virtual/vendor-media-utils`; link flags: `-lprivilege`, and conditionally `pkg-config --libs libsafec` when `safec` is in `DISTRO_FEATURES`; compile flags: `-DDROP_ROOT_PRIV` (enables privilege-drop path at build time), conditionally `pkg-config --cflags libsafec` or `-fPIC`, and `-DSAFEC_DUMMY_API` when `safec` is absent from `DISTRO_FEATURES`.
-- **Device Services / HAL**: RMF AudioCapture HAL (`rmfAudioCapture.h`). See [Major HAL APIs Integration](#major-hal-apis-integration) for the full API surface and return values.
+- **HAL**: RMF AudioCapture HAL (`rmfAudioCapture.h`). See [Major HAL APIs Integration](#major-hal-apis-integration) for the full API surface and return values.
 - **IARM Bus**: Bus name `audiocapturemgr` method names defined in `include/audiocapturemgr_iarm.h`.
 - **Systemd Services**: `iarmbusd.service` must be running before `audiocapturemgr` starts.
 - **Startup Order**: Defined by systemd unit `After=` / `Requires=` dependency on `iarmbusd.service`.
@@ -260,8 +262,9 @@ sequenceDiagram
 
 | Target Component / Layer   | Interaction Purpose                                                                          | Key APIs / Topics                                                                                                                                                                                                                              |
 | -------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Device Services / HAL**  |                                                                                              |                                                                                                                                                                                                                                                |
+| **HAL**                    |                                                                                              |                                                                                                                                                                                                                                                |
 | RMF AudioCapture           | Open, configure, query, and control the capture device; receive PCM audio data via callback. | `RMF_AudioCapture_Open`, `RMF_AudioCapture_Open_Type`, `RMF_AudioCapture_GetDefaultSettings`, `RMF_AudioCapture_GetCurrentSettings`, `RMF_AudioCapture_GetStatus`, `RMF_AudioCapture_Start`, `RMF_AudioCapture_Stop`, `RMF_AudioCapture_Close` |
+| **Component APIs**         |                                                                                              |                                                                                                                                                                                                                                                |
 | IARM Bus                   | Receive control calls from clients and publish clip-ready events.                            | `IARM_Bus_Init`, `IARM_Bus_Connect`, `IARM_Bus_RegisterEvent`, `IARM_Bus_RegisterCall`, `IARM_Bus_BroadcastEvent`, `IARM_Bus_Disconnect`, `IARM_Bus_Term`                                                                                      |
 | **External Systems**       |                                                                                              |                                                                                                                                                                                                                                                |
 | UNIX domain socket clients | Receive realtime PCM stream (ip_out) or audio clip bytes (music_id socket mode).             | `socket`, `bind`, `listen`, `accept`, `write` on paths under `/tmp/`                                                                                                                                                                           |
@@ -311,16 +314,16 @@ sequenceDiagram
 
 ### Major HAL APIs Integration
 
-| HAL / DS API                            | Purpose                                                                                                                                             | Implementation File                                            |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `RMF_AudioCapture_Open()`               | Opens the capture device for the primary audio source and obtains a handle during `q_mgr` construction.                                             | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp) |
-| `RMF_AudioCapture_Open_Type()`          | Opens the capture device for a specified source type (`RMF_AC_TYPE_PRIMARY` or `RMF_AC_TYPE_AUXILIARY`), used when source selection is explicit.    | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp) |
-| `RMF_AudioCapture_GetDefaultSettings()` | Queries default audio format and FIFO settings, used to initialize `m_audio_properties` before starting capture.                                    | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp) |
+| HAL API                                 | Purpose                                                                                                                                             | Implementation File                                                                                                            |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `RMF_AudioCapture_Open()`               | Opens the capture device for the primary audio source and obtains a handle during `q_mgr` construction.                                             | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp)                                                                 |
+| `RMF_AudioCapture_Open_Type()`          | Opens the capture device for a specified source type (`RMF_AC_TYPE_PRIMARY` or `RMF_AC_TYPE_AUXILIARY`), used when source selection is explicit.    | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp)                                                                 |
+| `RMF_AudioCapture_GetDefaultSettings()` | Queries default audio format and FIFO settings, used to initialize `m_audio_properties` before starting capture.                                    | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp)                                                                 |
 | `RMF_AudioCapture_GetCurrentSettings()` | Retrieves the `RMF_AudioCapture_Settings` currently in effect on a started handle and confirms the applied configuration after `Start()`.           | [src/audio_capture_manager.cpp](https://github.com/rdkcentral/rdk-halif-rmf_audio_capture/blob/main/include/rmfAudioCapture.h) |
 | `RMF_AudioCapture_GetStatus()`          | Queries the `RMF_AudioCapture_Status` struct (started flag, format, sampling rate, FIFO depth, overflow/underflow counts), callable after `Open()`. | [src/audio_capture_manager.cpp](https://github.com/rdkcentral/rdk-halif-rmf_audio_capture/blob/main/include/rmfAudioCapture.h) |
-| `RMF_AudioCapture_Start()`              | Starts capture with current settings and registers `q_mgr::data_callback` as the data handler.                                                      | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp) |
-| `RMF_AudioCapture_Stop()`               | Stops active audio capture, called on IARM `stop` or before property reconfiguration.                                                               | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp) |
-| `RMF_AudioCapture_Close()`              | Releases the capture handle and all hardware resources, called in `q_mgr` destructor.                                                               | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp) |
+| `RMF_AudioCapture_Start()`              | Starts capture with current settings and registers `q_mgr::data_callback` as the data handler.                                                      | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp)                                                                 |
+| `RMF_AudioCapture_Stop()`               | Stops active audio capture, called on IARM `stop` or before property reconfiguration.                                                               | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp)                                                                 |
+| `RMF_AudioCapture_Close()`              | Releases the capture handle and all hardware resources, called in `q_mgr` destructor.                                                               | [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp)                                                                 |
 
 ### Key Implementation Logic
 
