@@ -53,7 +53,7 @@ Northbound interaction flows exclusively through IARM, where clients invoke name
 
 IPC mechanisms include IARM call registration and event broadcast for control and asynchronous notifications, UNIX domain sockets (`AF_UNIX`, `SOCK_STREAM`) for realtime PCM streaming (`ip_out_client`) and socket-delivery clip output (`music_id_client`/`socket_adaptor`), and internal control pipes combined with `select()` loops to shut down listener threads in `ip_out_client`.
 
-Buffered clip file output is written via `std::ofstream` when using file-mode delivery. Socket-mode delivery writes clip bytes directly to an accepted UNIX socket connection. No component-owned configuration files are opened or parsed at runtime.
+Buffered clip output (opened with `BUFFERED_FILE_OUTPUT`) is currently delivered over a UNIX domain socket (the session API constructs `music_id_client` in `SOCKET_OUTPUT` mode, and `dataLocator` is the socket path). File-mode delivery via `std::ofstream` exists in `music_id_client` but is not wired into the session manager.
 
 ```mermaid
 graph LR
@@ -370,7 +370,7 @@ sequenceDiagram
 
 Runtime behavior is changed via IARM calls.
 
-```bash
+```c
 # Open a session (source=0, output_type=BUFFERED_FILE_OUTPUT or REALTIME_SOCKET)
 IARM_Bus_Call("audiocapturemgr", "open", iarmbus_open_args)
 
