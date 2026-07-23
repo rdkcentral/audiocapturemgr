@@ -108,7 +108,7 @@ Sock --> UDSClients
   - _`q_mgr` data monitor thread_ (`std::thread`): checks `m_inflow_byte_counter` every 5 seconds via `std::condition_variable` and logs stall and resume events.
   - _`music_id_client` worker thread_ (`std::thread`): decrements `time_remaining` on pending requests and calls `grab_last_n_seconds()` to fulfill them.
   - _`ip_out_client` listener thread_ (`pthread_create`): runs `select()` over the listen socket and a control pipe, accepts connections, and stores the write fd.
-  - _`socket_adaptor` listener thread_ (`std::thread`): accepts one connection and invokes the registered `connected_callback`.
+  - _`socket_adaptor` listener thread_ (`std::thread`): accepts one connection and invokes the callback registered via `register_data_ready_callback()`.
 - **Synchronization**: `pthread_mutex_t` (session manager, queue, client list), `std::mutex` (data monitor), `sem_t` (queue wakeup), and a global audio-buffer mutex for refcount operations.
 - **Async / Event Dispatch**: RMF capture callback pushes data into the incoming queue and posts the semaphore. IARM `BroadcastEvent` delivers `AUDIO_CLIP_READY` to subscribed clients. Socket callbacks trigger clip delivery for socket-output mode.
 
