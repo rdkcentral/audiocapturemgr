@@ -1,6 +1,6 @@
 # audiocapturemgr
 
-`audiocapturemgr` is a userspace daemon that captures live audio from the platform audio subsystem and serves audio data to clients over the IARM inter-process communication bus. It runs as a standalone background service that remains active for the lifetime of the system session, registering control methods on the bus at startup and tearing them down on process termination.
+`audiocapturemgr` is a userspace daemon that captures live audio from the platform audio subsystem and exposes control and clip-ready notifications over the IARM inter-process communication bus. Audio payloads are delivered to clients via local IPC endpoints (for example UNIX domain sockets) rather than over IARM.
 
 The service exposes audio capture sessions on a per-client basis. Each session is associated with the primary audio source and a delivery mode chosen at session open time: a buffered mode that maintains a rolling precapture queue and extracts audio clips on demand, or a realtime streaming mode that pushes live audio directly to the requesting client over a local socket connection. Clients are notified asynchronously over the bus when a requested audio clip becomes available.
 
