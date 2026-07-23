@@ -1,4 +1,4 @@
-# Audiocapturemgr
+# audiocapturemgr
 
 `audiocapturemgr` is a userspace daemon that captures live audio from the platform audio subsystem and serves audio data to clients over the IARM inter-process communication bus. It runs as a standalone background service that remains active for the lifetime of the system session, registering control methods on the bus at startup and tearing them down on process termination.
 
@@ -173,7 +173,7 @@ sequenceDiagram
 
 - Output mode switch (buffered vs. realtime) requires close/open because the client type is fixed at `open_handler()` time.
 - If a write error occurs on the realtime socket in `ip_out_client::data_callback`, the write fd is closed and `m_num_connections` is decremented.
-- When the incoming queue exceeds `MAX_QMGR_BUFFER_DURATION_S` seconds of buffered data, `flush_system()` is called to discard all queued buffers.
+- When the incoming queue exceeds `MAX_QMGR_BUFFER_DURATION_S` seconds of buffered data, the incoming queue is flushed to discard queued buffers (see `q_mgr::add_data()`).
 
 ---
 
@@ -360,7 +360,7 @@ sequenceDiagram
 | `AUDIOCAPTUREMGR_FILENAME_PREFIX` | string macro            | `"audio_sample"`     | Filename prefix constant used in session manager request naming paths. Defined in [include/audiocapturemgr_iarm.h](include/audiocapturemgr_iarm.h).       |
 | `AUDIOCAPTUREMGR_FILE_PATH`       | string macro            | `"/opt/"`            | Base path constant used alongside the filename prefix. Defined in [include/audiocapturemgr_iarm.h](include/audiocapturemgr_iarm.h).                       |
 | `DEFAULT_PRECAPTURE_DURATION_SEC` | `unsigned int` constant | `6`                  | Default precapture rolling window in seconds. Set via `music_id_client::set_precapture_duration()`. Defined in [src/music_id.cpp](src/music_id.cpp).      |
-| `MAX_QMGR_BUFFER_DURATION_S`      | `unsigned int` constant | `30`                 | Maximum queued audio duration in seconds before `flush_system()` is triggered. Defined in [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp). |
+| `MAX_QMGR_BUFFER_DURATION_S`      | `unsigned int` constant | `30`                 | Maximum queued audio duration in seconds before the incoming queue is flushed. Defined in [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp). |
 | `SOCKNAME_PREFIX` (`ip_out`)      | `std::string`           | `"/tmp/acm_ip_out_"` | Base path for the realtime output UNIX socket. Defined in [src/ip_out.cpp](src/ip_out.cpp).                                                               |
 | `SOCKET_PATH` (`music_id`)        | string constant         | `"/tmp/acm-songid"`  | Base path for the music-id UNIX socket. Suffix appended per instance. Defined in [src/music_id.cpp](src/music_id.cpp).                                    |
 | `DEFAULT_FIFO_SIZE`               | `size_t` constant       | `65536` (64 KiB)     | Default RMF capture FIFO size in bytes. Defined in [src/audio_capture_manager.cpp](src/audio_capture_manager.cpp).                                        |
@@ -370,7 +370,7 @@ sequenceDiagram
 
 Runtime behavior is changed via IARM calls.
 
-```c
+```text
 # Open a session (source=0, output_type=BUFFERED_FILE_OUTPUT or REALTIME_SOCKET)
 IARM_Bus_Call("audiocapturemgr", "open", iarmbus_open_args)
 
