@@ -144,8 +144,8 @@ sequenceDiagram
     Note over Comp: Control plane active — IARM methods available
 
     IARM->>Comp: open(source=0, output_type)
-    Comp->>Q: instantiate q_mgr, create client (music_id or ip_out)
-    Q->>RMF: Open + GetDefaultSettings
+    Comp->>Comp: create session + create client (music_id or ip_out) bound to existing q_mgr
+    Note over Comp,Q: q_mgr performs RMF Open + GetDefaultSettings during acm_session_mgr initialization
 
     IARM->>Comp: start(session_id)
     Comp->>Q: register_client + start()
