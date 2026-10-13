@@ -1,0 +1,27 @@
+name: Build Component in Native Environment
+
+on:
+  push:
+    branches: [ main, 'sprint/**', 'release/**', topic/RDK*, develop ]
+  pull_request:
+    branches: [ main, 'sprint/**', 'release/**', topic/RDK*, develop ]
+
+jobs:
+  build-audiocapmgr-on-pr:
+    name: Build audiocapturemgr component in github rdkcentral
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/rdkcentral/docker-rdk-ci:latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: native build
+        run: |
+          chmod +x build_dependencies.sh build.sh
+          bash -e build_dependencies.sh
+          bash -e build.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.RDKCM_RDKE }}
+
