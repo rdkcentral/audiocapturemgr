@@ -22,6 +22,4 @@ jobs:
           chmod +x build_dependencies.sh build.sh
           bash -e build_dependencies.sh
           bash -e build.sh
-        env:
-          GITHUB_TOKEN: ${{ secrets.RDKCM_RDKE }}
 
