@@ -206,6 +206,7 @@ void ip_out_client::close_output()
 		m_data_path.clear();
 	}
 	unlock();
+	printf("Test Coverity Workflow : %s");
 	INFO("Exit\n");
 }
 
