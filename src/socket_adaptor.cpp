@@ -113,7 +113,7 @@ int socket_adaptor::start_listening(const std::string &path)
 				close(m_listen_fd);
 				m_listen_fd = -1;
 				ret = -1;
-			        break;
+			    break;
 			}
 			INFO("Binding to path %s\n", bind_path.sun_path);
 			ret = bind(m_listen_fd, (const struct sockaddr *) &bind_path, sizeof(bind_path));
