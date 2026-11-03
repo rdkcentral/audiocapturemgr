@@ -142,8 +142,8 @@ std::string ip_out_client::open_output()
 		if(rc != EOK)
 		{
 			ERR_CHK(rc);
-		        close(m_listen_fd);
-		        m_listen_fd = -1;
+		    close(m_listen_fd);
+		    m_listen_fd = -1;
 			break;
 		}
 
