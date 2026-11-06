@@ -104,12 +104,16 @@ int socket_adaptor::start_listening(const std::string &path)
 
 		for(int retries = 0; retries <  2; retries++) //If first attempt fails due to path in use, unlink it and try again.
 		{
-			struct sockaddr_un bind_path;
+			struct sockaddr_un bind_path = {};
 			bind_path.sun_family = AF_UNIX;
 			rc = strcpy_s(bind_path.sun_path, sizeof(bind_path.sun_path), m_path.c_str());
 			if(rc != EOK)
 			{
 				ERR_CHK(rc);
+				close(m_listen_fd);
+				m_listen_fd = -1;
+				ret = -1;
+			    break;
 			}
 			INFO("Binding to path %s\n", bind_path.sun_path);
 			ret = bind(m_listen_fd, (const struct sockaddr *) &bind_path, sizeof(bind_path));

@@ -136,12 +136,15 @@ std::string ip_out_client::open_output()
 		num_retries--;
 		std::string sockpath = SOCKNAME_PREFIX + get_suffix(ticker++);
 
-		struct sockaddr_un bind_path;
+		struct sockaddr_un bind_path = {};
 		bind_path.sun_family = AF_UNIX;
 		rc = strcpy_s(bind_path.sun_path, sizeof(bind_path.sun_path), sockpath.c_str());
 		if(rc != EOK)
 		{
 			ERR_CHK(rc);
+		    close(m_listen_fd);
+		    m_listen_fd = -1;
+			break;
 		}
 
 		INFO("Binding to path %s\n", bind_path.sun_path);
