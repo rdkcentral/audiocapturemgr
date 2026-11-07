@@ -23,7 +23,7 @@ Requires=iarmbusd.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/audiocapturemgr
+ExecStart=/bin/sh -c '/usr/bin/audiocapturemgr'
 Restart=on-failure
 
 [Install]
