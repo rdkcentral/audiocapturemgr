@@ -59,7 +59,7 @@ music_id_client::~music_id_client()
 	}
 
 	/*Flush all queues.*/
-	INFO("Flushing request queue. Size is %d\n", m_requests.size());
+	INFO("Flushing request queue. Size is %zu\n", m_requests.size());
 	std::list<request_t *>::iterator req_iter;
 	for(req_iter = m_requests.begin(); req_iter != m_requests.end(); req_iter++)
 	{
@@ -117,8 +117,11 @@ int music_id_client::set_audio_properties(audio_properties_t &properties)
 	ret = audio_capture_client::set_audio_properties(properties);
 	if(0 == ret) 
 	{
+		const unsigned int data_rate = m_manager->get_data_rate();
+		lock();
 		/* Populate bit rate fields.*/
-		m_precapture_size_bytes = m_precapture_duration_seconds * m_manager->get_data_rate();
+		m_precapture_size_bytes = m_precapture_duration_seconds * data_rate;
+		unlock();
 	}
 	return ret;
 }
