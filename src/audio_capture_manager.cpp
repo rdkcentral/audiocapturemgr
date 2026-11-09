@@ -527,18 +527,18 @@ int q_mgr::stop()
 		return 0;
 	}
 
-        std::thread data_monitor_thread;
-        {
-        	std::unique_lock<std::mutex> lock(m_data_monitor_mutex);
-	        m_stop_data_monitor = true;
-	        data_monitor_thread.swap(m_data_monitor_thread);
-    	}
+    std::thread data_monitor_thread;
+    {
+       	std::unique_lock<std::mutex> lock(m_data_monitor_mutex);
+	    m_stop_data_monitor = true;
+	    data_monitor_thread.swap(m_data_monitor_thread);
+    }
 
 	m_data_monitor_cv.notify_all();
 
 	if (data_monitor_thread.joinable())
-        {
- 	      	data_monitor_thread.join();
+    {
+ 	   	data_monitor_thread.join();
 	}
 
 	int ret = RMF_AudioCapture_Stop(m_device_handle);
