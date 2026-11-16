@@ -216,11 +216,13 @@ void socket_adaptor::process_new_connection()
 		m_num_connections++;
 		INFO("Connected to new client.\n");
 	}
+	auto callback = m_callback;
+	void* callback_data = m_callback_data;
 	unlock();
 
-	if(m_callback)
+	if(callback)
 	{
-		m_callback(m_callback_data);
+		callback(callback_data);
 	}
 	return;
 }
@@ -324,9 +326,9 @@ void socket_adaptor::process_control_message(control_code_t message)
 unsigned int socket_adaptor::get_active_connections() 
 {
 	lock();
-	unsigned int num_conn = m_num_connections;
+	const unsigned int num_conn = m_num_connections;
 	unlock();
-	return m_num_connections;
+	return num_conn;
 }
 
 void socket_adaptor::register_data_ready_callback(socket_adaptor_cb_t callback, void *data)

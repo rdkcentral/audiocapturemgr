@@ -24,6 +24,7 @@
 #include <chrono>
 #include <unistd.h>
 #include "rmfAudioCapture.h"
+#include <inttypes.h>
 
 using namespace audiocapturemgr;
 
@@ -284,7 +285,11 @@ void q_mgr::get_default_audio_properties(audio_properties_t &out_properties)
 }
 unsigned int q_mgr::get_data_rate()
 {
-	return m_bytes_per_second;
+	lock(m_q_mutex);
+	const unsigned int bytes_per_second = m_bytes_per_second;
+	unlock(m_q_mutex);
+
+	return bytes_per_second;
 }
 
 void q_mgr::add_data(unsigned char *buf, unsigned int size)
@@ -440,8 +445,10 @@ void q_mgr::flush_system()
 
 static void log_settings(RMF_AudioCapture_Settings &settings)
 {
-	INFO("Format 0x%x, sampling freq: 0x%x, FIFO size: %d, threshold: %d, delay compensation: %d\n",
-		settings.format, settings.samplingFreq, settings.fifoSize, settings.threshold, settings.delayCompensation_ms);
+	INFO("Format 0x%x, sampling freq: 0x%x, FIFO size: %zu, threshold: %zu, delay compensation: %" PRIu32 "\n",
+		static_cast<unsigned int>(settings.format), 
+		static_cast<unsigned int>(settings.samplingFreq),
+		settings.fifoSize, settings.threshold, settings.delayCompensation_ms);
 }
 
 void q_mgr::data_monitor()
@@ -519,13 +526,20 @@ int q_mgr::stop()
 		WARN("Looks like device is already stopped.\n");
 		return 0;
 	}
-	
-	{
-		std::unique_lock<std::mutex> wlock(m_data_monitor_mutex);
-		m_stop_data_monitor = true;
-	}
+
+    std::thread data_monitor_thread;
+    {
+       	std::unique_lock<std::mutex> lock(m_data_monitor_mutex);
+	    m_stop_data_monitor = true;
+	    data_monitor_thread.swap(m_data_monitor_thread);
+    }
+
 	m_data_monitor_cv.notify_all();
-	m_data_monitor_thread.join();
+
+	if (data_monitor_thread.joinable())
+    {
+ 	   	data_monitor_thread.join();
+	}
 
 	int ret = RMF_AudioCapture_Stop(m_device_handle);
 	INFO("stop() result is 0x%x\n", ret);
