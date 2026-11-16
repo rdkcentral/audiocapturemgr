@@ -64,7 +64,6 @@ socket_adaptor::~socket_adaptor()
 
 int socket_adaptor::write_data(const char * buffer, const unsigned int size)
 {
-	lock();
 	int ret = write(m_write_fd, buffer, size);
 	if(0 > ret)
 	{
@@ -72,17 +71,18 @@ int socket_adaptor::write_data(const char * buffer, const unsigned int size)
 		perror("socket_adaptor::data_callback() ");
 
 		close(m_write_fd);
+		lock();
 		if(0 < m_write_fd)
 		{
 			m_write_fd = -1;
 			m_num_connections--;
 		}
+		unlock();
 	}
 	else if(ret != size)
 	{
 		WARN("Incomplete buffer write!\n");
 	}
-	unlock();
 	return ret;
 }
 
