@@ -78,7 +78,7 @@ music_id_client::~music_id_client()
 	if(SOCKET_OUTPUT == m_delivery_method)
 	{
 		delete m_sock_adaptor;
-		INFO("Outbox has %d entries. Flushing.\n", m_outbox.size());
+		INFO("Outbox has %zu entries. Flushing.\n", m_outbox.size());
 		for(auto & outbox_entry : m_outbox)
 		{
 			delete outbox_entry;
