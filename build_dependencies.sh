@@ -78,6 +78,7 @@ After this script completes, build audiocapturemgr with:
 
   export RDK_FSROOT_PATH="$PREFIX"
   export PKG_CONFIG_SYSROOT_DIR="$PREFIX"
+  export CPPFLAGS="-DSAFEC_DUMMY_API"
   autoreconf --install --force
   ./configure
   make
@@ -278,9 +279,9 @@ build_iarmbus() {
 
         # iarmbus includes safec_lib.h from its stubs directory. It also
         # includes GLib and D-Bus headers directly.
-        export CPPFLAGS="${CPPFLAGS:-} -I${source_dir}/stubs ${host_pkg_cflags}"
-        export CFLAGS="${CFLAGS:-} -I${source_dir}/stubs ${host_pkg_cflags}"
-        export CXXFLAGS="${CXXFLAGS:-} -I${source_dir}/stubs ${host_pkg_cflags}"
+        export CPPFLAGS="${CPPFLAGS:-} -DSAFEC_DUMMY_API -I${source_dir}/stubs ${host_pkg_cflags}"
+        export CFLAGS="${CFLAGS:-} -DSAFEC_DUMMY_API -I${source_dir}/stubs ${host_pkg_cflags}"
+        export CXXFLAGS="${CXXFLAGS:-} -DSAFEC_DUMMY_API -I${source_dir}/stubs ${host_pkg_cflags}"
         export LIBS="${LIBS:-} ${host_pkg_libs}"
 
         # Do not apply an RDK sysroot while configuring this native library.
@@ -349,6 +350,7 @@ main() {
     log "Configure audiocapturemgr with:"
     log "  export RDK_FSROOT_PATH=${PREFIX}"
     log "  export PKG_CONFIG_SYSROOT_DIR=${PREFIX}"
+    log "  export CPPFLAGS="-DSAFEC_DUMMY_API""
     log "  autoreconf --install --force"
     log "  ./configure"
     log "  make"

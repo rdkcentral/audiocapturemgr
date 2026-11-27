@@ -277,7 +277,7 @@ configure_build() {
         export RDK_FSROOT_PATH="$DEPS_PREFIX"
         export PKG_CONFIG_SYSROOT_DIR=
 
-        export CPPFLAGS="${CPPFLAGS:-} \
+        export CPPFLAGS="${CPPFLAGS:-} -DSAFEC_DUMMY_API \
 -I${DEPS_PREFIX}/include \
 -I${DEPS_PREFIX}/include/media-utils/audioCapture \
 -I${DEPS_PREFIX}/include/rdk/iarmbus \
